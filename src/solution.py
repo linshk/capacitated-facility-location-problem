@@ -523,7 +523,6 @@ def main():
 		append_result(i, new_ficilities, new_cost, t, './results/method_SA.csv')
 	#save_to_csv('./results/method_SA.csv')
 	
-
 if __name__ == '__main__':
 	main()
 
