@@ -109,20 +109,27 @@ def reorder_random(swap_times, li):
 
 # 将ficilities或customers列表按id排序
 def sort_list(li):
-	temp = copy.deepcopy(li)
+	temp = [None for i in li]
 	for i in range(len(li)):
 		temp[li[i].id] = li[i]
 	return temp
 
 # 随机交换两个需求点，并返回cost的变化(大于0表示cost增加小于0表示减少)，结果保存在传入的参数中
 # 扰动程度较小
-def get_neighbor_method_1(cur_ficilities, cur_customers, cur_total_cost):
+def get_neighbor_method_1(cur_ficilities, cur_customers, cur_total_cost, max_retries=100):
 	global customer_count
 	cid1, cid2 = gen_random_index_pair(0, customer_count - 1)
 	# 产生新的随机数直至需求点cid1和cid2能够互换位置而不会超出服务站容量
+	retries = 0
 	while (cur_ficilities[cur_customers[cid1].fid].cur_capacity < cur_customers[cid2].demand - cur_customers[cid1].demand or cur_ficilities[cur_customers[cid2].fid].cur_capacity < cur_customers[cid1].demand - cur_customers[cid2].demand):
 		cid1, cid2 = gen_random_index_pair(0, customer_count - 1)
-		#print('retry method 1...')
+		retries += 1
+		# 防止死循环
+		if retries > max_retries:
+			break
+	if retries > max_retries:
+		return 0
+  
 	fid1 = cur_customers[cid1].fid
 	fid2 = cur_customers[cid2].fid
 	cost1 = cur_ficilities[fid1].deassign(cur_customers[cid1])
@@ -133,12 +140,20 @@ def get_neighbor_method_1(cur_ficilities, cur_customers, cur_total_cost):
 
 # 随机选取两个需求点，将其中一个需求点分配给另一个需求点所在服务站
 # 扰动程度比较小
-def get_neighbor_method_2(cur_ficilities, cur_customers, cur_total_cost):
+def get_neighbor_method_2(cur_ficilities, cur_customers, cur_total_cost, max_retries=100):
 	global customer_count
 	cid1, cid2 = gen_random_index_pair(0, customer_count - 1)
 	# 将需求点cid2分配到需求点cid1所在的服务站
+	retries = 0
 	while cur_ficilities[cur_customers[cid1].fid].cur_capacity < cur_customers[cid2].demand:
 		cid1, cid2 = gen_random_index_pair(0, customer_count - 1)
+		retries += 1
+		# 防止死循环
+		if retries > max_retries:
+			break
+	if retries > max_retries:
+		return 0
+  
 	fid1 = cur_customers[cid1].fid
 	fid2 = cur_customers[cid2].fid
 	cost1 = cur_ficilities[fid2].deassign(cur_customers[cid2])
@@ -327,7 +342,7 @@ def greedy(ficilities, customers):
 		if best_ficility == None:
 			print('warning:some customers cannot be assigned to ficility')
 		cur_total_cost += best_ficility.assign(customer)
-		cur_customers = sort_list(cur_customers)
+	cur_customers = sort_list(cur_customers)
 	return cur_ficilities, cur_customers, cur_total_cost
 
 # 估算当前问题所能达到的最小代价
